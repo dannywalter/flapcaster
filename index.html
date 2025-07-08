@@ -73,6 +73,7 @@
         const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
 
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let flapNoiseBuffer;
         const backgroundMusic = document.getElementById("backgroundMusic");
         const scoreEl = document.getElementById("score");
         let isAudioUnlocked = false;
@@ -177,20 +178,24 @@
           bgCtx.shadowBlur = 0;
         }
 
+        function prepareAudio() {
+          const duration = 0.5;
+          const sampleRate = audioContext.sampleRate;
+          const noiseBufferSize = sampleRate * duration;
+          flapNoiseBuffer = audioContext.createBuffer(1, noiseBufferSize, sampleRate);
+          const noiseData = flapNoiseBuffer.getChannelData(0);
+          for (let i = 0; i < noiseBufferSize; i++) {
+            noiseData[i] = Math.random() * 2 - 1;
+          }
+        }
+
         // === SOUND EFFECTS ===
         function playFlapSound() {
           if (isMuted || !isAudioUnlocked || audioContext.state !== "running") return;
           const duration = 0.5;
           const now = audioContext.currentTime;
-          const sampleRate = audioContext.sampleRate;
-          const noiseBufferSize = sampleRate * duration;
-          const noiseBuffer = audioContext.createBuffer(1, noiseBufferSize, sampleRate);
-          const noiseData = noiseBuffer.getChannelData(0);
-          for (let i = 0; i < noiseBufferSize; i++) {
-            noiseData[i] = Math.random() * 2 - 1;
-          }
           const noiseSource = audioContext.createBufferSource();
-          noiseSource.buffer = noiseBuffer;
+          noiseSource.buffer = flapNoiseBuffer;
           const noiseFilter = audioContext.createBiquadFilter();
           noiseFilter.type = "lowpass";
           noiseFilter.frequency.setValueAtTime(300, now);
@@ -588,6 +593,7 @@
 
         async function init() {
           createBackgroundCanvas();
+          prepareAudio();
           player = {
             x: gameWidth / 2,
             y: gameHeight / 2,
