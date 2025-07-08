@@ -410,7 +410,8 @@
           if (gameState === "playing") {
             player.velocityY += CONFIG.GRAVITY;
             player.y += player.velocityY;
-            obstacles.forEach((obstacle) => {
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+              const obstacle = obstacles[i];
               obstacle.x -= obstacleSpeed;
               if (!obstacle.passed && player.x > obstacle.x + obstacle.width) {
                 score++;
@@ -420,18 +421,6 @@
                 updateScoreDisplay();
                 playScoreSound();
               }
-            });
-            if (obstacles.length === 0 || obstacles[obstacles.length - 1].x < gameWidth - CONFIG.OBSTACLE_SPACING) {
-              obstacles.push(createObstacle());
-            }
-            obstacles = obstacles.filter((o) => o.x > -o.width);
-            const backgroundScrollSpeed = obstacleSpeed * -1;
-            backgroundOffset -= backgroundScrollSpeed;
-            if (player.y - player.radius < 0 || player.y + player.radius > gameHeight) {
-              gameOver();
-              return;
-            }
-            for (const obstacle of obstacles) {
               if (
                 player.x + player.radius > obstacle.x &&
                 player.x - player.radius < obstacle.x + obstacle.width &&
@@ -441,6 +430,18 @@
                 gameOver();
                 return;
               }
+              if (obstacle.x <= -obstacle.width) {
+                obstacles.splice(i, 1);
+              }
+            }
+            if (obstacles.length === 0 || obstacles[obstacles.length - 1].x < gameWidth - CONFIG.OBSTACLE_SPACING) {
+              obstacles.push(createObstacle());
+            }
+            const backgroundScrollSpeed = obstacleSpeed * -1;
+            backgroundOffset -= backgroundScrollSpeed;
+            if (player.y - player.radius < 0 || player.y + player.radius > gameHeight) {
+              gameOver();
+              return;
             }
           } else if (gameState === "gameOver" && player.fadeFrame > 0) {
             player.fadeFrame--;
