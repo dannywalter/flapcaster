@@ -434,7 +434,11 @@
                 obstacles.splice(i, 1);
               }
             }
-            if (obstacles.length === 0 || obstacles[obstacles.length - 1].x < gameWidth - CONFIG.OBSTACLE_SPACING) {
+            const lastIndex = obstacles.length - 1;
+            if (
+              lastIndex < 0 ||
+              obstacles[lastIndex].x < gameWidth - CONFIG.OBSTACLE_SPACING
+            ) {
               obstacles.push(createObstacle());
             }
             const backgroundScrollSpeed = obstacleSpeed * -1;
