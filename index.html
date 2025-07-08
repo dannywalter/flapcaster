@@ -74,6 +74,7 @@
 
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const backgroundMusic = document.getElementById("backgroundMusic");
+        const scoreEl = document.getElementById("score");
         let isAudioUnlocked = false;
 
         function unlockAudio() {
@@ -402,7 +403,7 @@
         }
 
         function updateScoreDisplay() {
-          document.getElementById("score").textContent = score;
+          scoreEl.textContent = score;
         }
 
         function update() {
