@@ -611,7 +611,7 @@
         }
 
         canvas.addEventListener("mousedown", handleInput);
-        canvas.addEventListener("touchstart", handleInput);
+        canvas.addEventListener("touchstart", handleInput, { passive: false });
 
         init();
       })();
