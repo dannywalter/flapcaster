@@ -78,19 +78,19 @@
         const scoreEl = document.getElementById("score");
         let isAudioUnlocked = false;
 
-        function unlockAudio() {
+        async function unlockAudio() {
           if (audioContext.state === "suspended" && !isAudioUnlocked) {
-            audioContext
-              .resume()
-              .then(() => {
-                isAudioUnlocked = true;
-                updateAudio();
-              })
-              .catch((error) => {
-                console.error("Failed to unlock audio:", error);
-                isAudioUnlocked = false;
-              });
-          } else if (audioContext.state === "running") {
+            try {
+              await audioContext.resume();
+              prepareAudio();
+              isAudioUnlocked = true;
+              updateAudio();
+            } catch (error) {
+              console.error("Failed to unlock audio:", error);
+              isAudioUnlocked = false;
+            }
+          } else if (audioContext.state === "running" && !isAudioUnlocked) {
+            prepareAudio();
             isAudioUnlocked = true;
             updateAudio();
           }
@@ -554,9 +554,9 @@
           setTimeout(reset, 1000);
         }
 
-        function handleInput(event) {
+        async function handleInput(event) {
           event.preventDefault();
-          unlockAudio();
+          await unlockAudio();
           switch (gameState) {
             case "ready":
               gameState = "playing";
@@ -593,7 +593,6 @@
 
         async function init() {
           createBackgroundCanvas();
-          prepareAudio();
           player = {
             x: gameWidth / 2,
             y: gameHeight / 2,
