@@ -73,23 +73,24 @@
         const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
 
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let flapNoiseBuffer;
         const backgroundMusic = document.getElementById("backgroundMusic");
         const scoreEl = document.getElementById("score");
         let isAudioUnlocked = false;
 
-        function unlockAudio() {
+        async function unlockAudio() {
           if (audioContext.state === "suspended" && !isAudioUnlocked) {
-            audioContext
-              .resume()
-              .then(() => {
-                isAudioUnlocked = true;
-                updateAudio();
-              })
-              .catch((error) => {
-                console.error("Failed to unlock audio:", error);
-                isAudioUnlocked = false;
-              });
-          } else if (audioContext.state === "running") {
+            try {
+              await audioContext.resume();
+              prepareAudio();
+              isAudioUnlocked = true;
+              updateAudio();
+            } catch (error) {
+              console.error("Failed to unlock audio:", error);
+              isAudioUnlocked = false;
+            }
+          } else if (audioContext.state === "running" && !isAudioUnlocked) {
+            prepareAudio();
             isAudioUnlocked = true;
             updateAudio();
           }
@@ -177,20 +178,24 @@
           bgCtx.shadowBlur = 0;
         }
 
+        function prepareAudio() {
+          const duration = 0.5;
+          const sampleRate = audioContext.sampleRate;
+          const noiseBufferSize = sampleRate * duration;
+          flapNoiseBuffer = audioContext.createBuffer(1, noiseBufferSize, sampleRate);
+          const noiseData = flapNoiseBuffer.getChannelData(0);
+          for (let i = 0; i < noiseBufferSize; i++) {
+            noiseData[i] = Math.random() * 2 - 1;
+          }
+        }
+
         // === SOUND EFFECTS ===
         function playFlapSound() {
           if (isMuted || !isAudioUnlocked || audioContext.state !== "running") return;
           const duration = 0.5;
           const now = audioContext.currentTime;
-          const sampleRate = audioContext.sampleRate;
-          const noiseBufferSize = sampleRate * duration;
-          const noiseBuffer = audioContext.createBuffer(1, noiseBufferSize, sampleRate);
-          const noiseData = noiseBuffer.getChannelData(0);
-          for (let i = 0; i < noiseBufferSize; i++) {
-            noiseData[i] = Math.random() * 2 - 1;
-          }
           const noiseSource = audioContext.createBufferSource();
-          noiseSource.buffer = noiseBuffer;
+          noiseSource.buffer = flapNoiseBuffer;
           const noiseFilter = audioContext.createBiquadFilter();
           noiseFilter.type = "lowpass";
           noiseFilter.frequency.setValueAtTime(300, now);
@@ -406,18 +411,22 @@
           scoreEl.textContent = score;
         }
 
-        function update() {
+        function update(deltaTime) {
+          const frameFactor = deltaTime * 60;
           if (gameState === "playing") {
-            player.velocityY += CONFIG.GRAVITY;
-            player.y += player.velocityY;
+            player.velocityY += CONFIG.GRAVITY * frameFactor;
+            player.y += player.velocityY * frameFactor;
             for (let i = obstacles.length - 1; i >= 0; i--) {
               const obstacle = obstacles[i];
-              obstacle.x -= obstacleSpeed;
+              obstacle.x -= obstacleSpeed * frameFactor;
               if (!obstacle.passed && player.x > obstacle.x + obstacle.width) {
                 score++;
                 obstacle.passed = true;
                 // Increase speed by 0.03 per score but cap it at 4
-                obstacleSpeed = Math.min(CONFIG.INITIAL_SPEED + score * 0.03, 4);
+                obstacleSpeed = Math.min(
+                  CONFIG.INITIAL_SPEED + score * 0.03,
+                  4,
+                );
                 updateScoreDisplay();
                 playScoreSound();
               }
@@ -442,25 +451,25 @@
               obstacles.push(createObstacle());
             }
             const backgroundScrollSpeed = obstacleSpeed * -1;
-            backgroundOffset -= backgroundScrollSpeed;
+            backgroundOffset -= backgroundScrollSpeed * frameFactor;
             if (player.y - player.radius < 0 || player.y + player.radius > gameHeight) {
               gameOver();
               return;
             }
           } else if (gameState === "gameOver" && player.fadeFrame > 0) {
-            player.fadeFrame--;
+            player.fadeFrame -= frameFactor;
             player.opacity = player.fadeFrame / CONFIG.FADE_DURATION;
             if (player.fadeFrame <= 0) {
               player.isVisible = false;
             }
           }
           particles.forEach((particle) => {
-            particle.x += particle.vx;
-            particle.y += particle.vy;
-            particle.lifetime--;
+            particle.x += particle.vx * frameFactor;
+            particle.y += particle.vy * frameFactor;
+            particle.lifetime -= frameFactor;
           });
           particles = particles.filter((p) => p.lifetime > 0);
-          frameCount++;
+          frameCount += frameFactor;
         }
 
         function render() {
@@ -533,8 +542,12 @@
           }
         }
 
-        function gameLoop() {
-          update();
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+          if (!lastTime) lastTime = timestamp;
+          const deltaTime = (timestamp - lastTime) / 1000;
+          lastTime = timestamp;
+          update(deltaTime);
           render();
           requestAnimationFrame(gameLoop);
         }
@@ -549,9 +562,9 @@
           setTimeout(reset, 1000);
         }
 
-        function handleInput(event) {
+        async function handleInput(event) {
           event.preventDefault();
-          unlockAudio();
+          await unlockAudio();
           switch (gameState) {
             case "ready":
               gameState = "playing";
@@ -612,7 +625,7 @@
           if (window.FarcadeSDK) {
             window.FarcadeSDK.singlePlayer.actions.ready({ state: "ready" });
           }
-          gameLoop();
+          requestAnimationFrame(gameLoop);
         }
 
         canvas.addEventListener("mousedown", handleInput);
