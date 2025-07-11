@@ -20,6 +20,7 @@ Available codes:
 
 - **GOLD** – turns the alien a shiny gold color.
 - **ALIENP** – loads an alternate alien sprite.
+- **RAINBOW** – applies a shifting rainbow mask to the alien.
 
 More codes can be added by editing the `CHEATS` object inside `index.html`.
 

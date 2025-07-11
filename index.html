@@ -178,6 +178,7 @@
         let gameState = "ready";
         let score = 0;
         let obstacleSpeed = CONFIG.INITIAL_SPEED;
+        let rainbowActive = false;
         const CHEATS = {
           GOLD: () => {
             COLORS.BIRD = "#FFD700";
@@ -190,6 +191,9 @@
             } catch (e) {
               console.error("Failed to load alternate sprite:", e);
             }
+          },
+          RAINBOW: () => {
+            rainbowActive = true;
           },
         };
         let cheatBuffer = "";
@@ -454,6 +458,20 @@
                 player.frameHeight * RENDER_SCALE,
               );
               ctx.globalCompositeOperation = "source-over";
+              if (rainbowActive) {
+                ctx.save();
+                ctx.globalCompositeOperation = "source-atop";
+                const hue = (frameCount * 2) % 360;
+                const alpha = 0.7;
+                ctx.fillStyle = `hsla(${hue},100%,50%,${alpha})`;
+                ctx.fillRect(
+                  player.x - offsetX,
+                  player.y - offsetY,
+                  player.frameWidth * RENDER_SCALE,
+                  player.frameHeight * RENDER_SCALE,
+                );
+                ctx.restore();
+              }
             } else {
               ctx.save();
               ctx.globalCompositeOperation = "lighter";
@@ -483,16 +501,38 @@
                 player.frameWidth * RENDER_SCALE,
                 player.frameHeight * RENDER_SCALE,
               );
+              if (rainbowActive) {
+                ctx.save();
+                ctx.globalCompositeOperation = "source-atop";
+                const hue = (frameCount * 2) % 360;
+                const alpha = 0.7;
+                ctx.fillStyle = `hsla(${hue},100%,50%,${alpha})`;
+                ctx.fillRect(
+                  player.x - offsetX,
+                  player.y - offsetY,
+                  player.frameWidth * RENDER_SCALE,
+                  player.frameHeight * RENDER_SCALE,
+                );
+                ctx.restore();
+              }
             }
-          } else {
-            ctx.translate(player.x, player.y);
-            ctx.fillStyle = COLORS.BIRD;
-            ctx.beginPath();
-            ctx.rect(-player.radius, -player.radius, player.radius * 2, player.radius * 1.5);
-            ctx.fill();
+        } else {
+          ctx.translate(player.x, player.y);
+          ctx.fillStyle = COLORS.BIRD;
+          ctx.beginPath();
+          ctx.rect(-player.radius, -player.radius, player.radius * 2, player.radius * 1.5);
+          ctx.fill();
+          if (rainbowActive) {
+            const hue = (frameCount * 2) % 360;
+            const alpha = 0.7;
+            ctx.fillStyle = `hsla(${hue},100%,50%,${alpha})`;
+            ctx.globalCompositeOperation = "source-atop";
+            ctx.fillRect(-player.radius, -player.radius, player.radius * 2, player.radius * 1.5);
+            ctx.globalCompositeOperation = "source-over";
           }
-          ctx.restore();
         }
+        ctx.restore();
+      }
 
         function updateScoreDisplay() {
           scoreEl.textContent = score;
