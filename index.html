@@ -42,11 +42,47 @@
         margin-top: 10px;
         font-size: 24px;
       }
+      #cheatMessage {
+        margin-top: 5px;
+        font-size: 12px;
+      }
+      #showCodeInput,
+      #cheatForm button {
+        margin-top: 5px;
+        background: transparent;
+        color: #39ff14;
+        border: 2px solid #39ff14;
+        padding: 4px 8px;
+        font-size: 12px;
+        text-shadow: 0 0 5px #00ffff;
+        cursor: pointer;
+      }
+      #cheatForm {
+        margin-top: 5px;
+      }
+      #cheatForm input {
+        background: #000;
+        color: #39ff14;
+        border: 2px solid #39ff14;
+        padding: 4px 6px;
+        width: 100px;
+        font-family: inherit;
+        text-align: center;
+      }
+      #cheatForm button {
+        font-family: inherit;
+      }
     </style>
   </head>
   <body>
     <div class="hud">
       <div class="hud-score">SCORE: <span id="score">0</span></div>
+      <div id="cheatMessage"></div>
+      <button id="showCodeInput">Enter Code</button>
+      <form id="cheatForm" style="display:none;">
+        <input id="codeInput" type="text" maxlength="12" autocomplete="off" />
+        <button type="submit">Submit</button>
+      </form>
     </div>
     <canvas id="gameCanvas" width="400" height="800"></canvas>
     <audio id="backgroundMusic" loop>
@@ -76,6 +112,19 @@
         let flapNoiseBuffer;
         const backgroundMusic = document.getElementById("backgroundMusic");
         const scoreEl = document.getElementById("score");
+        const showCodeInputBtn = document.getElementById("showCodeInput");
+        const cheatForm = document.getElementById("cheatForm");
+        const codeInput = document.getElementById("codeInput");
+
+        function showCheatControls() {
+          cheatForm.style.display = "none";
+          showCodeInputBtn.style.display = "inline-block";
+        }
+
+        function hideCheatControls() {
+          cheatForm.style.display = "none";
+          showCodeInputBtn.style.display = "none";
+        }
         let isAudioUnlocked = false;
 
         async function unlockAudio() {
@@ -95,6 +144,21 @@
             updateAudio();
           }
         }
+
+        showCodeInputBtn.addEventListener("click", () => {
+          cheatForm.style.display = "inline-block";
+          showCodeInputBtn.style.display = "none";
+          codeInput.focus();
+        });
+        cheatForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const code = codeInput.value.trim().toUpperCase();
+          if (applyCheat(code)) {
+            cheatForm.style.display = "none";
+            showCodeInputBtn.style.display = "inline-block";
+          }
+          codeInput.value = "";
+        });
 
         let isMuted = false;
         if (window.FarcadeSDK) {
@@ -140,6 +204,60 @@
         let gameState = "ready";
         let score = 0;
         let obstacleSpeed = CONFIG.INITIAL_SPEED;
+        let rainbowActive = false;
+        const CHEATS = {
+          GOLD: () => {
+            COLORS.BIRD = "#FFD700";
+          },
+          ALIENP: async () => {
+            try {
+              await loadSpriteFromURL(
+                "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/pvSYEy3hqIt9/alien-sprite-8If5DwrMfXagoxQXvOvyMrePCAGhvk"
+              );
+            } catch (e) {
+              console.error("Failed to load alternate sprite:", e);
+            }
+          },
+          RAINBOW: () => {
+            rainbowActive = true;
+          },
+        };
+        let cheatBuffer = "";
+        const MAX_CHEAT_LENGTH = 12;
+        let cheatMessageTimeout;
+        function showCheatMessage(msg) {
+          const el = document.getElementById("cheatMessage");
+          if (!el) return;
+          el.textContent = msg;
+          clearTimeout(cheatMessageTimeout);
+          cheatMessageTimeout = setTimeout(() => {
+            el.textContent = "";
+          }, 2000);
+        }
+        function applyCheat(code) {
+          if (CHEATS[code]) {
+            CHEATS[code]();
+            showCheatMessage(`CHEAT ACTIVATED: ${code}`);
+            return true;
+          }
+          return false;
+        }
+        document.addEventListener("keydown", (e) => {
+          if (cheatForm.style.display !== "none") return;
+          if (e.key.length === 1) {
+            cheatBuffer += e.key.toUpperCase();
+            if (cheatBuffer.length > MAX_CHEAT_LENGTH) {
+              cheatBuffer = cheatBuffer.slice(-MAX_CHEAT_LENGTH);
+            }
+            for (const code in CHEATS) {
+              if (cheatBuffer.endsWith(code)) {
+                applyCheat(code);
+                cheatBuffer = "";
+                break;
+              }
+            }
+          }
+        });
         let backgroundOffset = 0;
         let frameCount = 0;
         let player;
@@ -367,6 +485,20 @@
                 player.frameHeight * RENDER_SCALE,
               );
               ctx.globalCompositeOperation = "source-over";
+              if (rainbowActive) {
+                ctx.save();
+                ctx.globalCompositeOperation = "source-atop";
+                const hue = (frameCount * 2) % 360;
+                const alpha = 0.7;
+                ctx.fillStyle = `hsla(${hue},100%,50%,${alpha})`;
+                ctx.fillRect(
+                  player.x - offsetX,
+                  player.y - offsetY,
+                  player.frameWidth * RENDER_SCALE,
+                  player.frameHeight * RENDER_SCALE,
+                );
+                ctx.restore();
+              }
             } else {
               ctx.save();
               ctx.globalCompositeOperation = "lighter";
@@ -396,16 +528,38 @@
                 player.frameWidth * RENDER_SCALE,
                 player.frameHeight * RENDER_SCALE,
               );
+              if (rainbowActive) {
+                ctx.save();
+                ctx.globalCompositeOperation = "source-atop";
+                const hue = (frameCount * 2) % 360;
+                const alpha = 0.7;
+                ctx.fillStyle = `hsla(${hue},100%,50%,${alpha})`;
+                ctx.fillRect(
+                  player.x - offsetX,
+                  player.y - offsetY,
+                  player.frameWidth * RENDER_SCALE,
+                  player.frameHeight * RENDER_SCALE,
+                );
+                ctx.restore();
+              }
             }
-          } else {
-            ctx.translate(player.x, player.y);
-            ctx.fillStyle = COLORS.BIRD;
-            ctx.beginPath();
-            ctx.rect(-player.radius, -player.radius, player.radius * 2, player.radius * 1.5);
-            ctx.fill();
+        } else {
+          ctx.translate(player.x, player.y);
+          ctx.fillStyle = COLORS.BIRD;
+          ctx.beginPath();
+          ctx.rect(-player.radius, -player.radius, player.radius * 2, player.radius * 1.5);
+          ctx.fill();
+          if (rainbowActive) {
+            const hue = (frameCount * 2) % 360;
+            const alpha = 0.7;
+            ctx.fillStyle = `hsla(${hue},100%,50%,${alpha})`;
+            ctx.globalCompositeOperation = "source-atop";
+            ctx.fillRect(-player.radius, -player.radius, player.radius * 2, player.radius * 1.5);
+            ctx.globalCompositeOperation = "source-over";
           }
-          ctx.restore();
         }
+        ctx.restore();
+      }
 
         function updateScoreDisplay() {
           scoreEl.textContent = score;
@@ -567,6 +721,7 @@
           await unlockAudio();
           switch (gameState) {
             case "ready":
+              hideCheatControls();
               gameState = "playing";
               player.velocityY = CONFIG.JUMP_VELOCITY;
               playFlapSound();
@@ -597,6 +752,7 @@
           frameCount = 0;
           gameState = "ready";
           updateScoreDisplay();
+          showCheatControls();
         }
 
         async function init() {
