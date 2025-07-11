@@ -42,11 +42,16 @@
         margin-top: 10px;
         font-size: 24px;
       }
+      #cheatMessage {
+        margin-top: 5px;
+        font-size: 12px;
+      }
     </style>
   </head>
   <body>
     <div class="hud">
       <div class="hud-score">SCORE: <span id="score">0</span></div>
+      <div id="cheatMessage"></div>
     </div>
     <canvas id="gameCanvas" width="400" height="800"></canvas>
     <audio id="backgroundMusic" loop>
@@ -140,6 +145,48 @@
         let gameState = "ready";
         let score = 0;
         let obstacleSpeed = CONFIG.INITIAL_SPEED;
+        const CHEATS = {
+          GOLD: () => {
+            COLORS.BIRD = "#FFD700";
+          },
+          ALIENP: async () => {
+            try {
+              await loadSpriteFromURL(
+                "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/pvSYEy3hqIt9/alien-sprite-8If5DwrMfXagoxQXvOvyMrePCAGhvk"
+              );
+            } catch (e) {
+              console.error("Failed to load alternate sprite:", e);
+            }
+          },
+        };
+        let cheatBuffer = "";
+        const MAX_CHEAT_LENGTH = 12;
+        let cheatMessageTimeout;
+        function showCheatMessage(msg) {
+          const el = document.getElementById("cheatMessage");
+          if (!el) return;
+          el.textContent = msg;
+          clearTimeout(cheatMessageTimeout);
+          cheatMessageTimeout = setTimeout(() => {
+            el.textContent = "";
+          }, 2000);
+        }
+        document.addEventListener("keydown", (e) => {
+          if (e.key.length === 1) {
+            cheatBuffer += e.key.toUpperCase();
+            if (cheatBuffer.length > MAX_CHEAT_LENGTH) {
+              cheatBuffer = cheatBuffer.slice(-MAX_CHEAT_LENGTH);
+            }
+            for (const code in CHEATS) {
+              if (cheatBuffer.endsWith(code)) {
+                CHEATS[code]();
+                showCheatMessage(`CHEAT ACTIVATED: ${code}`);
+                cheatBuffer = "";
+                break;
+              }
+            }
+          }
+        });
         let backgroundOffset = 0;
         let frameCount = 0;
         let player;
