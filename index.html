@@ -99,6 +99,16 @@
         const showCodeInputBtn = document.getElementById("showCodeInput");
         const cheatForm = document.getElementById("cheatForm");
         const codeInput = document.getElementById("codeInput");
+
+        function showCheatControls() {
+          cheatForm.style.display = "none";
+          showCodeInputBtn.style.display = "inline-block";
+        }
+
+        function hideCheatControls() {
+          cheatForm.style.display = "none";
+          showCodeInputBtn.style.display = "none";
+        }
         let isAudioUnlocked = false;
 
         async function unlockAudio() {
@@ -694,6 +704,7 @@
           await unlockAudio();
           switch (gameState) {
             case "ready":
+              hideCheatControls();
               gameState = "playing";
               player.velocityY = CONFIG.JUMP_VELOCITY;
               playFlapSound();
@@ -724,6 +735,7 @@
           frameCount = 0;
           gameState = "ready";
           updateScoreDisplay();
+          showCheatControls();
         }
 
         async function init() {
