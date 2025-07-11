@@ -14,7 +14,7 @@ Open `index.html` with any modern web browser. You can double-click the file or 
 
 ## Cheat Codes
 
-While playing you can type secret codes on your keyboard to enable extra features. When a valid code is entered a short message will appear at the top of the screen.
+Click the **Enter Code** button at the top of the screen to reveal a text box for entering cheats, or simply type a secret code on your keyboard while playing. When a valid code is submitted a short message will appear in the HUD.
 
 Available codes:
 
