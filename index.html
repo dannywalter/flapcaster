@@ -243,6 +243,7 @@
           return false;
         }
         document.addEventListener("keydown", (e) => {
+          if (cheatForm.style.display !== "none") return;
           if (e.key.length === 1) {
             cheatBuffer += e.key.toUpperCase();
             if (cheatBuffer.length > MAX_CHEAT_LENGTH) {

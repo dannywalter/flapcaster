@@ -14,7 +14,7 @@ Open `index.html` with any modern web browser. You can double-click the file or 
 
 ## Cheat Codes
 
-Click the **Enter Code** button at the top of the title screen to reveal a text box for entering cheats, or simply type a secret code on your keyboard. The button and form hide automatically once the game begins and reappear the next time the title is shown. When a valid code is submitted a short message will appear in the HUD.
+Click the **Enter Code** button at the top of the title screen to reveal a text box for entering cheats. While this field is open codes aren\'t triggered until you press **Submit** (or hit Enter). You can also type a secret code on your keyboard when the form is hidden. The button and form hide automatically once the game begins and reappear the next time the title is shown. When a valid code is submitted a short message will appear in the HUD.
 
 Available codes:
 
